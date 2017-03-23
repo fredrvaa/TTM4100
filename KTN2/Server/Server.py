@@ -68,7 +68,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             self.send_response( "Server", "info", "Login sccuessful")
 
     def logout(self):
-        self.send_response(self, "Server", "info", "logout successful")
+        self.send_response("Server", "info", "logout successful")
         if self in server.connected_clients:
             server.connected_clients.remove(self)
 
