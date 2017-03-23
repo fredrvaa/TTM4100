@@ -23,16 +23,16 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.ip = self.client_address[0]
         self.port = self.client_address[1]
         self.connection = self.request
-        self.id = None
+        self.username = None
         self.server.connected_clients.append(self)
         
 
         # Loop that listens for messages from the client
         while True:
-            received_json = self.connection.recv(4096)
-            
+            received_json = self.connection.recv(4096).decode("utf-8")
+            print(received_json)
             # TODO: Add handling of received payload from client
-            recieved = json.loads(recieved_json)
+            recieved = json.loads(received_json)
             if (recieved["request"] == "login") and (recieved["content"] is not None):
                 self.login( recieved["content"])
                 self.history()
@@ -56,57 +56,57 @@ class ClientHandler(socketserver.BaseRequestHandler):
             else:
                self.error("The request: ",recieved["request"]," is not in this server's scope of operation")
 
-        def login(self, username):
-            if not re.match("[A-Za-z0-9]", username):
-                self.error("Username can only contain numbers and letters")
-            elif self.user_connected(username):
-                self.error("Username already taken by someone else")
-            else:
-                self.username = username
-                print (username + " has logged in.")
-                self.send_response( "Server", "Info", "Login sccuessful")
+    def login(self, username):
+        if not re.match("[A-Za-z0-9]", username):
+            self.error("Username can only contain numbers and letters")
+        elif self.user_connected(username):
+            self.error("Username already taken by someone else")
+        else:
+            self.username = username
+            print (username + " has logged in.")
+            self.send_response( "Server", "Info", "Login sccuessful")
 
-        def logout(self):
-            self.send_response(self, "Server", "Info", "logout successful")
-            if self in server.connected_clients:
-                server.connected_clients.remove(self)
+    def logout(self):
+        self.send_response(self, "Server", "Info", "logout successful")
+        if self in server.connected_clients:
+            server.connected_clients.remove(self)
 
-        def names (self):
-            names = ""
-            for user in server.connected_clients:
-                if user.username is not None:
-                    names += user.username + ", "
-            self.send_response( "Server", "Info", names)
+    def names (self):
+        names = ""
+        for user in server.connected_clients:
+            if user.username is not None:
+                names += user.username + ", "
+        self.send_response( "Server", "Info", names)
             
-        def help(self):
-            self.send_response( "Server", "Info", "Available commands: login <username<, logout, msg <message>, names, help")
+    def help(self):
+        self.send_response( "Server", "Info", "Available commands: login <username<, logout, msg <message>, names, help")
 
-        def history(self):
-            history = []
-            for message in server.chat_history:
-                history.append(message)
-            self.send_response( "Server", "History", history)
+    def history(self):
+        history = []
+        for message in server.chat_history:
+            history.append(message)
+        self.send_response( "Server", "History", history)
 
-        def error(self, content):
-            self.send_response("Server", "Error", content)
+    def error(self, content):
+        self.send_response("Server", "Error", content)
 
-        def send_message(username, content):
-            for user in server.connected_clients:
-                user.send_response(self, username, "Message", content)
+    def send_message(username, content):
+        for user in server.connected_clients:
+            user.send_response(self, username, "Message", content)
 
-        def send_response(self, sender, response, content):
-            reply = {"timestamp": time.asctime(time.localtime(time.time())), "sender": sender, "response": response, "content": content}
-            print(reply)
-            reply_json = json.dumps(reply)
-            self.connection.send(reply_json.encode())
-            if response == "message":
-                server.chat_history.append(reply_json)
+    def send_response(self, sender, response, content):
+        reply = {"timestamp": time.asctime(time.localtime(time.time())), "sender": sender, "response": response, "content": content}
+        print(reply)
+        reply_json = json.dumps(reply)
+        self.connection.send(reply_json.encode())
+        if response == "message":
+            server.chat_history.append(reply_json)
 
-        def user_connected(self, username):
-            for user in server.connected_clients:
-                if user.username == username:
-                    return True
-            return False
+    def user_connected(self, username):
+        for user in server.connected_clients:
+            if user.username == username:
+                return True
+        return False
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """
