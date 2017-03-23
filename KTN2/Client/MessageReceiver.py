@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
+import socket
 
 class MessageReceiver(Thread):
     """
@@ -9,6 +10,7 @@ class MessageReceiver(Thread):
     """
 
     def __init__(self, client, connection):
+        super(MessageReceiver, self).__init__()
         """
         This method is executed when creating a new MessageReceiver object
         """
@@ -16,8 +18,14 @@ class MessageReceiver(Thread):
         # Flag to run thread as a deamon
         self.daemon = True
 
-        # TODO: Finish initialization of MessageReceiver
+        self.client = client
+        self.connection = connection
 
     def run(self):
-        # TODO: Make MessageReceiver receive and handle payloads
-        pass
+        while True:
+            msg = self.connection.recv(4096).decode()
+            if msg == "":
+                self.client.disconnect()
+                return
+            else:
+                self.client.receive_payload(msg)

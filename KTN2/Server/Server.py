@@ -41,6 +41,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             elif recieved["request"] == "logout":
                 if self.username is not None:
                     self.logout()
+                    return
                 else:
                     self.error("You need to log in first")
             elif recieved["request"] == "msg":
